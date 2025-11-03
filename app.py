@@ -16,29 +16,41 @@ def health():
 @app.route('/webhook/whatsapp', methods=['POST'])
 def whatsapp_webhook():
     try:
+        print("🔄 Webhook triggered!")
+        
         chatbot = BusinessChatbot()
         incoming_msg = request.values.get('Body', '').strip()
         from_number = request.values.get('From', '')
         
-        print(f"📱 Message from {from_number}: {incoming_msg}")
+        print(f"📱 Message from {from_number}: '{incoming_msg}'")
+        print(f"📊 All form data: {dict(request.values)}")
         
         if not incoming_msg:
-            return str(MessagingResponse()), 200, {'Content-Type': 'text/xml'}
+            print("❌ Empty message received")
+            empty_response = str(MessagingResponse())
+            print(f"📤 Sending empty response: {empty_response}")
+            return empty_response, 200, {'Content-Type': 'text/xml'}
         
         response_text = chatbot.process_message(incoming_msg)
-        print(f"🤖 Bot response: {response_text}")
+        print(f"🤖 Bot response: '{response_text}'")
         
         twiml_response = MessagingResponse()
         twiml_response.message(response_text)
-        return str(twiml_response), 200, {'Content-Type': 'text/xml'}
+        final_response = str(twiml_response)
+        
+        print(f"📤 Sending TwiML response: {final_response}")
+        return final_response, 200, {'Content-Type': 'text/xml'}
         
     except Exception as e:
         print(f"❌ Webhook error: {e}")
+        import traceback
+        print(f"🔍 Full traceback: {traceback.format_exc()}")
+        
         twiml_response = MessagingResponse()
         twiml_response.message("Desculpe, ocorreu um erro.")
         return str(twiml_response), 200, {'Content-Type': 'text/xml'}
 
 # Use the port Render provides
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))  # Changed to 10000
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
