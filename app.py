@@ -13,12 +13,6 @@ def home():
 def health():
     return "OK", 200
 
-@app.route('/test')
-def test():
-    chatbot = BusinessChatbot()
-    response = chatbot.process_message("Olá, teste do servidor na nuvem!")
-    return f"Chatbot test: {response}"
-
 @app.route('/webhook/whatsapp', methods=['POST'])
 def whatsapp_webhook():
     try:
@@ -44,7 +38,7 @@ def whatsapp_webhook():
         twiml_response.message("Desculpe, ocorreu um erro.")
         return str(twiml_response), 200, {'Content-Type': 'text/xml'}
 
-# Production server - this keeps the app running
+# Use the port Render provides
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 10000))  # Changed to 10000
     app.run(host='0.0.0.0', port=port, debug=False)
