@@ -14,6 +14,15 @@ def home():
 def health():
     return "OK", 200
 
+@app.route('/test')
+def test():
+    try:
+        chatbot = BusinessChatbot()
+        response = chatbot.process_message("Teste de funcionamento")
+        return f"✅ Chatbot test successful: {response}"
+    except Exception as e:
+        return f"❌ Chatbot test failed: {e}"
+
 @app.route('/webhook/whatsapp', methods=['POST'])
 def whatsapp_webhook():
     try:
