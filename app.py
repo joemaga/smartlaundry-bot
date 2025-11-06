@@ -1,9 +1,8 @@
 import os
-from flask import Flask, request
+from flask import Flask, request, make_response
 from twilio.twiml.messaging_response import MessagingResponse
 from src.chatbot import BusinessChatbot
 
-# Create Flask app instance
 app = Flask(__name__)
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 
@@ -15,50 +14,27 @@ def home():
 def health():
     return "OK", 200
 
-@app.route('/test')
-def test():
-    try:
-        chatbot = BusinessChatbot()
-        response = chatbot.process_message("Teste de funcionamento")
-        return f"✅ Chatbot test successful: {response}"
-    except Exception as e:
-        return f"❌ Chatbot test failed: {e}"
+@app.route('/webhook', methods=['GET', 'POST'])
+def webhook():
+    # Handle verification (GET request from Meta)
+    if request.method == 'GET':
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
 
-@app.route('/webhook/whatsapp', methods=['POST'])
-def whatsapp_webhook():
-    try:
-        print("🔄 WEBHOOK TRIGGERED - THIS SHOULD APPEAR IN LOGS!")
-        
-        chatbot = BusinessChatbot()
-        incoming_msg = request.values.get('Body', '').strip()
-        from_number = request.values.get('From', '')
-        
-        print(f"📱 Message from {from_number}: '{incoming_msg}'")
-        
-        if not incoming_msg:
-            print("❌ Empty message received")
-            return str(MessagingResponse()), 200, {'Content-Type': 'text/xml'}
-        
-        response_text = chatbot.process_message(incoming_msg)
-        print(f"🤖 Bot response: '{response_text}'")
-        
-        twiml_response = MessagingResponse()
-        twiml_response.message(response_text)
-        final_response = str(twiml_response)
-        
-        print(f"📤 Sending TwiML: {final_response}")
-        return final_response, 200, {'Content-Type': 'text/xml'}
-        
-    except Exception as e:
-        print(f"❌ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        
-        twiml_response = MessagingResponse()
-        twiml_response.message("Desculpe, ocorreu um erro.")
-        return str(twiml_response), 200, {'Content-Type': 'text/xml'}
+        if mode == 'subscribe' and token == VERIFY_TOKEN:
+            print("✅ Webhook verified successfully!")
+            # Return the challenge value directly, not as JSON
+            return challenge, 200
+        else:
+            print("❌ Webhook verification failed!")
+            return 'Verification failed', 403
 
-# Only run if this is the main module
+    # Handle incoming WhatsApp messages (POST request from Meta)
+    elif request.method == 'POST':
+        print("📨 Received a WhatsApp message from Meta!")
+        return make_response('EVENT_RECEIVED', 200)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     print(f"🚀 Starting Flask app on port {port}")
