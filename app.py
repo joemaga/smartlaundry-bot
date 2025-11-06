@@ -5,6 +5,7 @@ from src.chatbot import BusinessChatbot
 
 # Create Flask app instance
 app = Flask(__name__)
+VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 
 @app.route('/')
 def home():
